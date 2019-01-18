@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--<script  src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="js/distpicker.data.js"></script>
+    <script type="text/javascript" src="js/distpicker.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+    <meta charset="UTF-8">
+    <title>整车价格计算</title>
+
+</head>
+<p>
+
+<h3>整车价格：</h3>
+<p>
+
+</p>
+<p>
+ <p>
+    <div id = "environment">
+    <label style = "color: red">请选择环境（与自己电脑环境保持一致）：</label>
+    <select id = "environmentWay">
+        <option>205环境</option>
+        <option>预发环境</option>
+    </select>
+    </div>
+<p>
+
+</p>
+
+    <div id = "calcuteWay">
+    <label style = "color: red">请选择根据整车线路计算或整车价格计算：</label>
+    <select id = "selectCalcuteWay">
+        <option>整车线路</option>
+        <option>整车价格</option>
+    </select>
+    </div>
+ </p>
+
+    <div id = "senderAddress" data-toggle="distpicker">
+    出发地：
+       <select id="senderProvince" data-province="浙江省" name="provinceName"></select>
+       <select id="senderCity" data-city="杭州市" name="cityName"></select>
+       <select id="senderDistrict" data-district="江干区" name="districtName"></select>
+    货物名称：<input id = "goodsName" style = "width:155px;">
+    吨运量：<input id = "tonnage" style = "width:155px;">
+    方运量：<input id = "volume" style = "width:155px;">
+    </div>
+</p>
+
+<p>
+    <div id = "receiverAddress" data-toggle="distpicker">
+    目的地：
+       <select id="recipientProvince" data-province="浙江省" name="provinceName"></select>
+       <select id="recipientCity" data-city="杭州市" name="cityName"></select>
+       <select id="recipientDistrict" data-district="西湖区" name="districtName"></select>
+    <button onclick="getDistance()">计算导航距离</button>
+       <input  id="distance" disabled = "true" style = "width: 100px">
+    时效：<select id="agingWay" style = "width:100px;"></select>
+    装卸方式：<select id="loadUnloadTemplate" style = "width:100px;">
+                  <option>一装一卸</option>
+                  <option>一装二卸</option>
+                  <option>一装三卸</option>
+                  <option>二装一卸</option>
+                  <option>二装二卸</option>
+              </select>
+     发票：<select id="invoiceWay" style = "width:100px;">
+                  <option>无需发票</option>
+                  <option>10%发票</option>
+              </select>
+    </div>
+</p>
+
+
+
+<button onclick="price()"  style="margin-left:20px;height:35px;padding-right:20px;padding-left:20px;background-color: #FF0000;color:white;">计算</button>
+<p>
+
+</p>
+
+<label style = "color: blue">备注：1、不参与计算的需全部填写0；2、货物名称有多个时计算可能会不准确；3、需先计算出导航距离，时效才可选择；
+    4、特殊地址解析可能会有问题，建议人工计算，如宁夏；
+    </label>
+<p>
+
+</p>
+    <div id = "result_carload" style = "display: none">
+        <p style = "color:red;">
+            整车价格：
+            <label id = "result" style = "color:red;"> </label>
+        </p>
+    </div>
+
+
+
+<script type="text/javascript">
+    function getElementById(id) {
+        return document.getElementById(id).value
+    }
+
+    function price() {
+
+        //车型吨位
+        var tonnage = getElementById("tonnage");
+
+         //方运量
+        var volume = getElementById("volume");
+        //发货地省
+        var senderProvince = getElementById("senderProvince");
+        //发货地市
+        var senderCity = getElementById("senderCity");
+        var senderDistrict = getElementById("senderDistrict");
+
+        //收货地省
+        var recipientProvince = getElementById("recipientProvince");
+        //收货地市
+        var recipientCity = getElementById("recipientCity");
+        var recipientDistrict = getElementById("recipientDistrict");
+
+        var distance = getElementById("distance");
+        console.log("导航距离"+distance);
+
+        var goodsName = getElementById("goodsName");
+        var agingWay = $("#agingWay").val();
+        var loadUnloadTemplate = $("#loadUnloadTemplate").val();
+        var invoiceWay = $("#invoiceWay").val();
+        console.log("发票方式"+invoiceWay);
+
+
+        //选择何种方式计算
+        var selectCalcuteWay = getElementById("selectCalcuteWay");
+        //选择何种方式计算
+        var environment = getElementById("environmentWay");
+
+        if ((volume == "")  || (tonnage == "") || (goodsName == "") ||(distance == "") ||
+            (agingWay == "") ||(loadUnloadTemplate == "") ||(invoiceWay == "")) {
+            window.alert("所有字段均必填！")
+        } else {
+            $.ajax({
+                url: '/calculateVehiclePrice/',
+                type: 'POST',
+                async: false,
+                data: {'selectCalcuteWay': selectCalcuteWay,'tonnage':tonnage,'volume':volume, 'senderProvince': senderProvince, 'senderCity': senderCity, 'senderDistrict': senderDistrict,
+                'recipientProvince':recipientProvince,'recipientCity':recipientCity,'recipientDistrict':recipientDistrict,
+                'distance':distance,'goodsName':goodsName,'agingWay':agingWay,'loadUnloadTemplate':loadUnloadTemplate,'invoiceWay':invoiceWay,'environment':environment},
+                success: function (response) {
+                    console.log("response:" + response)
+                    $("#result_carload").attr("style", " display: block;");
+                    if (response >0){
+                        document.getElementById("result").innerHTML = '';
+                        document.getElementById("result").innerHTML = response;
+                    }else if (response == 0 || response<0) {
+                        document.getElementById("result").innerHTML = '';
+                        document.getElementById("result").innerHTML = "暂无估价";
+                    } else {
+                        document.getElementById("result").innerHTML = '';
+                        document.getElementById("result").innerHTML = "暂无估价"
+                    }
+
+                }
+            })
+
+        }
+    }
+
+    function getDistance() {
+        var senderProvince = getElementById("senderProvince");
+        var senderCity = getElementById("senderCity");
+        var  senderDistrict = getElementById("senderDistrict");
+        console.log(senderDistrict)
+        var recipientProvince = getElementById("recipientProvince");
+        var recipientCity = getElementById("recipientCity");
+        var  recipientDistrict = getElementById("recipientDistrict");
+
+        //选择何种方式计算
+        var environment = getElementById("environmentWay");
+
+        $.ajax({
+            url: '/getDistance/',
+            type: 'POST',
+            async:false,
+            data: {'senderProvince':senderProvince,'senderCity':senderCity,'senderDistrict':senderDistrict,
+                'recipientProvince':recipientProvince,'recipientCity':recipientCity,'recipientDistrict':recipientDistrict,'environment':environment},
+            success: function (response) {
+                document.getElementById("distance").value = "";
+                document.getElementById("distance").value = response['distance'];
+                document.getElementById("agingWay").innerHTML = "";
+                for(var i=0;i<response['agingInfo'].length;i++){
+                    console.log(response['agingInfo'][i])
+                    $("#agingWay").append("<option value='"+response['agingInfo'][i]+"'>"+response['agingInfo'][i]+"</option>");
+                }
+            }})
+
+    }
+
+</script>
+</body>
+</html>
